@@ -1,0 +1,623 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>1. StretchSense Library &mdash; StretchSense 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="StretchSense 1.0 documentation" href="index.html" />
+    <link rel="up" title="StretchSense" href="modules.html" />
+    <link rel="next" title="2. StretchSense GUI Main" href="StretchSenseMain.html" />
+    <link rel="prev" title="StretchSense" href="modules.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="StretchSenseMain.html" title="2. StretchSense GUI Main"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="StretchSense"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">StretchSense 1.0 documentation</a> &raquo;</li>
+          <li><a href="modules.html" accesskey="U">StretchSense</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="stretchsense-library">
+<h1>1. StretchSense Library<a class="headerlink" href="#stretchsense-library" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Description of each functions and classes of the Raspberry Pi API.</p>
+</div>
+<span class="target" id="module-stretchSenseLibrary"></span><ul class="simple">
+<li>Website : <a class="reference external" href="https://www.stretchsense.com">https://www.stretchsense.com</a></li>
+<li>Important : This StretchSense Library has been designed to enable the connection of one or more &#8220;StretchSense Sensor&#8221; and &#8220;StretchSense IC Boards&#8221; to your Raspberry Pi</li>
+<li>Author : Louis Germain</li>
+<li>Copyright : 2017 StretchSense</li>
+<li>Date : 26/07/2017</li>
+<li>Version : 1.0.0</li>
+</ul>
+<hr class="docutils" />
+<ul>
+<li><dl class="class">
+<dt id="stretchSenseLibrary.StretchSensePeripheral">
+<em class="property">class </em><tt class="descclassname">stretchSenseLibrary.</tt><tt class="descname">StretchSensePeripheral</tt><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSensePeripheral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSensePeripheral" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class which create a StretchSense peripheral with all the argument that can be used.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>addr</strong> &#8211; string:
+Contains the address of the device : &#8220;xx:xx:xx:xx:xx&#8221;.</li>
+<li><strong>uuid</strong> &#8211; string:
+Contains the UUID of the device &#8220;xxxxxxxx-7374-7265-7563-6873656e7365&#8221;.</li>
+<li><strong>value</strong> &#8211; int:
+Contains the value of the device in hexadecimal.</li>
+<li><strong>channelNumber</strong> &#8211; int:
+For devices with multiple channels, contains the number of the channel.</li>
+<li><strong>gen</strong> &#8211; int:
+This number is the generation of the device.</li>
+<li><strong>color</strong> &#8211; string:
+This gives the device a color to use when displayed.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+</ul>
+<hr class="docutils" />
+<ul>
+<li><dl class="class">
+<dt id="stretchSenseLibrary.StretchSenseAPI">
+<em class="property">class </em><tt class="descclassname">stretchSenseLibrary.</tt><tt class="descname">StretchSenseAPI</tt><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI" title="Permalink to this definition">¶</a></dt>
+<dd><ul>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.spi_generateTenChannel">
+<tt class="descname">spi_generateTenChannel</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.spi_generateTenChannel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.spi_generateTenChannel" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function generate ten peripheral type StretchSensePeripheral used for the SPI.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.spi_setup">
+<tt class="descname">spi_setup</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.spi_setup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.spi_setup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start the setup of the SPI communication.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.spi_mode">
+<tt class="descname">spi_mode</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.spi_mode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.spi_mode" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function is called before using the SPI transmission, it verify which mode we are using.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.spi_triggerModeCapacitance">
+<tt class="descname">spi_triggerModeCapacitance</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.spi_triggerModeCapacitance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.spi_triggerModeCapacitance" title="Permalink to this definition">¶</a></dt>
+<dd><p>When TRIGGER is enable we use this SPI function.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.spi_continuousModeCapacitance">
+<tt class="descname">spi_continuousModeCapacitance</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.spi_continuousModeCapacitance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.spi_continuousModeCapacitance" title="Permalink to this definition">¶</a></dt>
+<dd><p>When INTERRUPT is enable or in continuous mode we use this SPI function.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.spi_writeConfiguration">
+<tt class="descname">spi_writeConfiguration</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.spi_writeConfiguration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.spi_writeConfiguration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function called in spi_setup() to write the configuration on the SPI bus.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.spi_readCapacitance">
+<tt class="descname">spi_readCapacitance</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.spi_readCapacitance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.spi_readCapacitance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function which read the capacitance in hexadecimal in the SPI bus.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">int :
+raw sensing from the 16FGV1.0</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.spi_getCapacitanceScalingFactor">
+<tt class="descname">spi_getCapacitanceScalingFactor</tt><big>(</big><em>self</em>, <em>resolutionConfig</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.spi_getCapacitanceScalingFactor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.spi_getCapacitanceScalingFactor" title="Permalink to this definition">¶</a></dt>
+<dd><p>The 16FGV1.0 has an adjustable LSB resolution this function scales raw data to capacitance based on
+the configuration.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>resolutionConfig</strong> &#8211; int :
+Resolution set on the SPI bus during spi_writeConfiguration.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">int :
+The scale of the resolution.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.spi_extractCapacitance">
+<tt class="descname">spi_extractCapacitance</tt><big>(</big><em>self</em>, <em>raw</em>, <em>channel</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.spi_extractCapacitance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.spi_extractCapacitance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does the conversion of the raw value received by the 16FGV1.0 into a decimal value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>raw</strong> &#8211; int :
+Raw is the raw value that we read on the SPI bus.</li>
+<li><strong>channel</strong> &#8211; int :
+Number from 0 to 9 corresponding of the channel number to convert the raw value.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.spi_listToCsv">
+<tt class="descname">spi_listToCsv</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.spi_listToCsv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.spi_listToCsv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display the values in a csv format in the terminal.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.spi_getValuesCsv">
+<tt class="descname">spi_getValuesCsv</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.spi_getValuesCsv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.spi_getValuesCsv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the values in a csv format.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">string :
+16FGV1.0 values in a csv format.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.spi_getListPeripheral">
+<tt class="descname">spi_getListPeripheral</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.spi_getListPeripheral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.spi_getListPeripheral" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of all peripheral created by spi_generateTenChannel().</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">list :
+List containing all the information of each SPI peripheral connected.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.spi_close">
+<tt class="descname">spi_close</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.spi_close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.spi_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the SPI transmission.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_printAllPeripheralsAvailable">
+<tt class="descname">ble_printAllPeripheralsAvailable</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_printAllPeripheralsAvailable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_printAllPeripheralsAvailable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display all the StretchSense&#8217;s device addresses available around.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_printAllPeripheralsConnected">
+<tt class="descname">ble_printAllPeripheralsConnected</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_printAllPeripheralsConnected"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_printAllPeripheralsConnected" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display all the StretchSense&#8217;s device addresses connected.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_scanning">
+<tt class="descname">ble_scanning</tt><big>(</big><em>self</em>, <em>scanTime</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_scanning"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_scanning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scan for StretchSense devices in the area and store them in listPeripheralAvailable.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>scanTime</strong> &#8211; int :
+Time to scan for.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_connectOnePeripheral">
+<tt class="descname">ble_connectOnePeripheral</tt><big>(</big><em>self</em>, <em>myDeviceAddr</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_connectOnePeripheral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_connectOnePeripheral" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connect one StretchSense device which is available using its address, generate one or more
+peripherals as StretchSensePeripheral and store them into listPeripheralIsConnected.
+The peripheral is also stored in listPeripheralInUse.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>myDeviceAddr</strong> &#8211; string :
+Address of the device that you want to connect.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_connectAllPeripheral">
+<tt class="descname">ble_connectAllPeripheral</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_connectAllPeripheral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_connectAllPeripheral" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_disconnectOnePeripheral">
+<tt class="descname">ble_disconnectOnePeripheral</tt><big>(</big><em>self</em>, <em>myDeviceAddr</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_disconnectOnePeripheral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_disconnectOnePeripheral" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconnect one StretchSense device which is connected using its address, and remove it from
+listPeripheralIsConnected.
+The peripheral is also removed from listPeripheralInUse.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>myDeviceAddr</strong> &#8211; string :
+Address of the device that you want to disconnect.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_disconnectAllPeripherals">
+<tt class="descname">ble_disconnectAllPeripherals</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_disconnectAllPeripherals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_disconnectAllPeripherals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconnect all StretchSense devices which are connected, and remove them from both
+listPeripheralIsConnected and listPeripheralInUse.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_updateAllPeripherals">
+<tt class="descname">ble_updateAllPeripherals</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_updateAllPeripherals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_updateAllPeripherals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the value of the capacitance of each StretchSense devices which are connected.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_generateOneChannel">
+<tt class="descname">ble_generateOneChannel</tt><big>(</big><em>self</em>, <em>peripheral</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_generateOneChannel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_generateOneChannel" title="Permalink to this definition">¶</a></dt>
+<dd><p>When a StretchSense gen2 device is connected we create a newSensor receiving the
+specifications needed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>peripheral</strong> &#8211; Peripheral :
+Using the BLE Peripheral format we can convert it into a StretchSensePeripheral
+format easier to use.</li>
+<li><strong>periphUUID</strong> &#8211; UUID :
+UUID of the StretchSense circuit</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_generateTenChannel">
+<tt class="descname">ble_generateTenChannel</tt><big>(</big><em>self</em>, <em>peripheral</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_generateTenChannel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_generateTenChannel" title="Permalink to this definition">¶</a></dt>
+<dd><p>When a StretchSense gen3 device is connected we create ten newSensor receiving the
+specifications needed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>peripheral</strong> &#8211; Peripheral :
+Using the BLE Peripheral format we can convert it into a StretchSensePeripheral
+format easier to use.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_discoverServices">
+<tt class="descname">ble_discoverServices</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_discoverServices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_discoverServices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Display on the terminal all the services for each StretchSense devices connected.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_discoverCharacteristics">
+<tt class="descname">ble_discoverCharacteristics</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_discoverCharacteristics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_discoverCharacteristics" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_updateOneChannelWithNotifications">
+<tt class="descname">ble_updateOneChannelWithNotifications</tt><big>(</big><em>self</em>, <em>data</em>, <em>addr</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_updateOneChannelWithNotifications"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_updateOneChannelWithNotifications" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update data from one or more StretchSense gen2 devices connected using BLE notifications
+and stores its value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>data</strong> &#8211; UTF-8 characters :
+data transmitted by the device once a notification is detected.</li>
+<li><strong>addr</strong> &#8211; string :
+Address of the gen2 we want to update.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_updateOneChannel">
+<tt class="descname">ble_updateOneChannel</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_updateOneChannel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_updateOneChannel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update once the value of every StretchSense gen2 devices connected without using BLE notifications.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_updateTenChannelWithNotifications">
+<tt class="descname">ble_updateTenChannelWithNotifications</tt><big>(</big><em>self</em>, <em>data</em>, <em>addr</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_updateTenChannelWithNotifications"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_updateTenChannelWithNotifications" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update data from one or more StretchSense gen3 devices connected using BLE notifications
+and stores its value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>data</strong> &#8211; UTF-8 characters :
+data transmitted by the device once a notification is detected.</li>
+<li><strong>addr</strong> &#8211; string :
+Address of the gen3 we want to update.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_updateTenChannel">
+<tt class="descname">ble_updateTenChannel</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_updateTenChannel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_updateTenChannel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update once the value of every StretchSense gen3 devices connected without BLE using notifications.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_waitNotifications">
+<tt class="descname">ble_waitNotifications</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_waitNotifications"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_waitNotifications" title="Permalink to this definition">¶</a></dt>
+<dd><p>When called, run into all connected devices waiting for notification from each of them
+and store the new data in their value slot.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_getListPeripheralAvailable">
+<tt class="descname">ble_getListPeripheralAvailable</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_getListPeripheralAvailable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_getListPeripheralAvailable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the list of all devices available in the area.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">[Peripheral] : List of all the devices available.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_getListAddrPeripheralAvailable">
+<tt class="descname">ble_getListAddrPeripheralAvailable</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_getListAddrPeripheralAvailable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_getListAddrPeripheralAvailable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the list of all devices address available in the area.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">[addr] : List of all devices available addresses.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_getListPeripheralIsConnected">
+<tt class="descname">ble_getListPeripheralIsConnected</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_getListPeripheralIsConnected"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_getListPeripheralIsConnected" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the list of all devices connected.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">[StretchSensePeripheral] : List of all devices connected.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_getListPeripheralOnceConnected">
+<tt class="descname">ble_getListPeripheralOnceConnected</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_getListPeripheralOnceConnected"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_getListPeripheralOnceConnected" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the list of all devices once connected.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">[StretchSensePeripheral] : List of all devices once connected.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_getListPeripheralInUse">
+<tt class="descname">ble_getListPeripheralInUse</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_getListPeripheralInUse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_getListPeripheralInUse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the list of all devices currently in use.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">[Peripheral] : List of all devices we are using.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_listToCsv">
+<tt class="descname">ble_listToCsv</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_listToCsv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_listToCsv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displays on the terminal the values of each connected devices in a csv format.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="stretchSenseLibrary.StretchSenseAPI.ble_getValuesCsv">
+<tt class="descname">ble_getValuesCsv</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/stretchSenseLibrary.html#StretchSenseAPI.ble_getValuesCsv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#stretchSenseLibrary.StretchSenseAPI.ble_getValuesCsv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the values of each connected devices in a csv format.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">string : Values of each connected devices.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+</ul>
+</dd></dl>
+
+</li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="modules.html"
+                        title="previous chapter">StretchSense</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="StretchSenseMain.html"
+                        title="next chapter">2. StretchSense GUI Main</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/stretchSenseLibrary.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="StretchSenseMain.html" title="2. StretchSense GUI Main"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="StretchSense"
+             >previous</a> |</li>
+        <li><a href="index.html">StretchSense 1.0 documentation</a> &raquo;</li>
+          <li><a href="modules.html" >StretchSense</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2017, Louis Germain.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

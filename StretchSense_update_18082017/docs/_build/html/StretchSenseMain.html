@@ -1,0 +1,377 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>2. StretchSense GUI Main &mdash; StretchSense 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="StretchSense 1.0 documentation" href="index.html" />
+    <link rel="up" title="StretchSense" href="modules.html" />
+    <link rel="next" title="3. Example Main" href="main.html" />
+    <link rel="prev" title="1. StretchSense Library" href="stretchSenseLibrary.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="main.html" title="3. Example Main"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="stretchSenseLibrary.html" title="1. StretchSense Library"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">StretchSense 1.0 documentation</a> &raquo;</li>
+          <li><a href="modules.html" accesskey="U">StretchSense</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="stretchsense-gui-main">
+<h1>2. StretchSense GUI Main<a class="headerlink" href="#stretchsense-gui-main" title="Permalink to this headline">¶</a></h1>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Description of each functions and classes of the Raspberry Pi GUI.</p>
+</div>
+<span class="target" id="module-StretchSenseMain"></span><ul class="simple">
+<li>Website : <a class="reference external" href="https://www.stretchsense.com">https://www.stretchsense.com</a></li>
+<li>Important : This StretchSense Library has been designed to enable the connection of one or more &#8220;StretchSense Sensor&#8221; and &#8220;StretchSense IC Boards&#8221; to your Raspberry Pi</li>
+<li>Author : Louis Germain</li>
+<li>Copyright : 2017 StretchSense</li>
+<li>Date : 26/07/2017</li>
+<li>Version : 1.0.0</li>
+</ul>
+<hr class="docutils" />
+<ul>
+<li><dl class="class">
+<dt id="StretchSenseMain.StretchSenseApp">
+<em class="property">class </em><tt class="descclassname">StretchSenseMain.</tt><tt class="descname">StretchSenseApp</tt><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp" title="Permalink to this definition">¶</a></dt>
+<dd><ul>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.spiThreadDone">
+<tt class="descname">spiThreadDone</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.spiThreadDone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.spiThreadDone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Action triggerd by the BLE thread that updates our values</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.bleThreadDone">
+<tt class="descname">bleThreadDone</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.bleThreadDone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.bleThreadDone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Action triggerd by the BLE thread that updates our values</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.closeEvent">
+<tt class="descname">closeEvent</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.closeEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.closeEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the window and make sure that all thread are stopped</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.spiSettings">
+<tt class="descname">spiSettings</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.spiSettings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.spiSettings" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function initialize the SPI settings list into the GUI .</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.spiGetSettings">
+<tt class="descname">spiGetSettings</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.spiGetSettings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.spiGetSettings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get settings which are selected by the user in the lists.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.spiSetSettings">
+<tt class="descname">spiSetSettings</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.spiSetSettings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.spiSetSettings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Submit the SPI settings chosen by the user onto the SPI bus via the API.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.spiValueTable">
+<tt class="descname">spiValueTable</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.spiValueTable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.spiValueTable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets and displays SPI values in the GUI.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.spiRecordButton">
+<tt class="descname">spiRecordButton</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.spiRecordButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.spiRecordButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the SPI record button has been pushed.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.spiRecordData">
+<tt class="descname">spiRecordData</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.spiRecordData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.spiRecordData" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the SPI record button pushed, we start recording the data.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.spiStopRecordData">
+<tt class="descname">spiStopRecordData</tt><big>(</big><em>self</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.spiStopRecordData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.spiStopRecordData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop recording data and open the window to save the generated file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> &#8211; string :
+SPI Recorded data.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.bleScan">
+<tt class="descname">bleScan</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.bleScan"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.bleScan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start BLE scan by pushing the button.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.bleConnectInList">
+<tt class="descname">bleConnectInList</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.bleConnectInList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.bleConnectInList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connect the device the user chose via the API.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.bleDisconnectInList">
+<tt class="descname">bleDisconnectInList</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.bleDisconnectInList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.bleDisconnectInList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconnect the device selected by the user.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.bleValueTable">
+<tt class="descname">bleValueTable</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.bleValueTable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.bleValueTable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets and displays BLE values in the GUI.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.bleRecordButton">
+<tt class="descname">bleRecordButton</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.bleRecordButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.bleRecordButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the BLE record button has been pushed.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.bleRecordData">
+<tt class="descname">bleRecordData</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.bleRecordData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.bleRecordData" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the BLE record button pushed, we start recording the data.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.bleStopRecordData">
+<tt class="descname">bleStopRecordData</tt><big>(</big><em>self</em>, <em>data</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.bleStopRecordData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.bleStopRecordData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop recording data and open the window to save the generated file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> &#8211; string :
+BLE Recorded data.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.mainTab">
+<tt class="descname">mainTab</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.mainTab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.mainTab" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switch to main tab.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.spiTab">
+<tt class="descname">spiTab</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.spiTab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.spiTab" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switch to SPI tab.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.spiSettingsTab">
+<tt class="descname">spiSettingsTab</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.spiSettingsTab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.spiSettingsTab" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switch to SPI settings tab.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.bleTab">
+<tt class="descname">bleTab</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.bleTab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.bleTab" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switch to BLE tab.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.bleValueTableTab">
+<tt class="descname">bleValueTableTab</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.bleValueTableTab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.bleValueTableTab" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switch to BLE value table tab.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.bleScanTab">
+<tt class="descname">bleScanTab</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.bleScanTab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.bleScanTab" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switch to BLE scan tab.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.bleBarGraphTab">
+<tt class="descname">bleBarGraphTab</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.bleBarGraphTab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.bleBarGraphTab" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switch to BLE barGraph tab.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.bleLineGraphTab">
+<tt class="descname">bleLineGraphTab</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.bleLineGraphTab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.bleLineGraphTab" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switch to BLE lineGraph tab.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.infomationTab">
+<tt class="descname">infomationTab</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.infomationTab"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.infomationTab" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switch to information tab.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.disconnectButton">
+<tt class="descname">disconnectButton</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.disconnectButton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.disconnectButton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Disconnect every BLE peripherals by pushing the button.</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.setValueBackgroundColor">
+<tt class="descname">setValueBackgroundColor</tt><big>(</big><em>self</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.setValueBackgroundColor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.setValueBackgroundColor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the alternance of colors into different devices while displaying</p>
+</dd></dl>
+
+</li>
+<li><dl class="method">
+<dt id="StretchSenseMain.StretchSenseApp.recordData">
+<tt class="descname">recordData</tt><big>(</big><em>self</em>, <em>recorded</em>, <em>filename</em><big>)</big><a class="reference internal" href="_modules/StretchSenseMain.html#StretchSenseApp.recordData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#StretchSenseMain.StretchSenseApp.recordData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open a new file and write the data in.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>recorded</strong> &#8211; string
+.csv file we want to record.</li>
+<li><strong>filename</strong> &#8211; path
+Path to where we save the .csv file.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</li>
+</ul>
+</dd></dl>
+
+</li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="stretchSenseLibrary.html"
+                        title="previous chapter">1. StretchSense Library</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="main.html"
+                        title="next chapter">3. Example Main</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/StretchSenseMain.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="main.html" title="3. Example Main"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="stretchSenseLibrary.html" title="1. StretchSense Library"
+             >previous</a> |</li>
+        <li><a href="index.html">StretchSense 1.0 documentation</a> &raquo;</li>
+          <li><a href="modules.html" >StretchSense</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2017, Louis Germain.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

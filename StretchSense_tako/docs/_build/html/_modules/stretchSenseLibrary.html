@@ -1,0 +1,1615 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>stretchSenseLibrary &mdash; StretchSense 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="StretchSense 1.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">StretchSense 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for stretchSenseLibrary</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python3</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    - Website : https://www.stretchsense.com</span>
+
+<span class="sd">    - Important : This StretchSense Library has been designed to enable the connection of one or more &quot;StretchSense Sensor&quot; and &quot;StretchSense IC Boards&quot; to your Raspberry Pi</span>
+
+<span class="sd">    - Author : Louis Germain</span>
+
+<span class="sd">    - Copyright : 2017 StretchSense</span>
+
+<span class="sd">    - Date : 26/07/2017</span>
+
+<span class="sd">    - Version : 1.0.0</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">binascii</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">RPi.GPIO</span> <span class="kn">as</span> <span class="nn">GPIO</span>
+<span class="kn">import</span> <span class="nn">spidev</span>
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Timer</span><span class="p">,</span> <span class="n">Lock</span>
+<span class="kn">from</span> <span class="nn">bluepy</span> <span class="kn">import</span> <span class="n">btle</span>
+
+
+<span class="k">class</span> <span class="nc">RepeatedTimer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="c">#print(&quot;RepeatedTimer()&quot;)</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class used to create a timer which repeat every defined interval.</span>
+
+<span class="sd">    :param object: int, function</span>
+<span class="sd">        int : timeout</span>
+
+<span class="sd">        function : is the function that you want to repeat (should be written as lambda: &quot;function&quot;)</span>
+
+<span class="sd">    :returns:</span>
+
+<span class="sd">        timer</span>
+<span class="sd">            Returns a timer which start when the function is called, you should do &quot;timer.stop&quot; to terminate it</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">function</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timer</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">function</span> <span class="o">=</span> <span class="n">function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interval</span> <span class="o">=</span> <span class="n">interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">kwargs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stopped</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;autostart&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">from_run</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">from_run</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">from_run</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stopped</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_stopped</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interval</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_timer</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stopped</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timer</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">Board Configuration Raspberry Pi 3 B+ SPI0:</span>
+
+<span class="sd">NSS = 24</span>
+<span class="sd">SCK = 23</span>
+<span class="sd">MISO = 21</span>
+<span class="sd">MOSI = 19</span>
+
+<span class="sd">Board Configuration Raspberry Pi 3 B+ SPI1:</span>
+
+<span class="sd">NSS = 26</span>
+<span class="sd">SCK = 40</span>
+<span class="sd">MISO = 35</span>
+<span class="sd">MOSI = 38</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c"># GPIO Layout configuration</span>
+
+<span class="n">GPIOLAYOUT</span> <span class="o">=</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">BOARD</span>
+<span class="c">#GPIOLAYOUT = GPIO.BCM</span>
+
+<span class="c"># Set up the SPI pattern from the GPIO LAYOUT</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="n">GPIOLAYOUT</span> <span class="o">==</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">BOARD</span><span class="p">):</span>
+    <span class="n">CE_PIN0</span> <span class="o">=</span> <span class="mi">24</span>
+    <span class="n">CE_PIN1</span> <span class="o">=</span> <span class="mi">26</span>
+    <span class="n">INTERRUPT_PIN</span> <span class="o">=</span> <span class="mi">13</span>
+    <span class="n">TRIGGER_PIN</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="k">elif</span> <span class="p">(</span><span class="n">GPIOLAYOUT</span> <span class="o">==</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">BCM</span><span class="p">):</span>
+    <span class="n">CE_PIN0</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="n">CE_PIN1</span> <span class="o">=</span> <span class="mi">11</span>
+    <span class="n">INTERRUPT_PIN</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">TRIGGER_PIN</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="c"># GPIO &amp; SPI Pin Configuration</span>
+
+<span class="n">GPIO</span><span class="o">.</span><span class="n">setmode</span><span class="p">(</span><span class="n">GPIOLAYOUT</span><span class="p">)</span>
+<span class="n">GPIO</span><span class="o">.</span><span class="n">setwarnings</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+<span class="n">SPI0</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">SPI1</span> <span class="o">=</span> <span class="mi">1</span>                    <span class="c"># SPI1 still in developpment</span>
+
+<span class="c"># Data Package options</span>
+
+<span class="n">DATA</span> <span class="o">=</span> <span class="mh">0x00</span>
+<span class="n">CONFIG</span> <span class="o">=</span> <span class="mh">0x01</span>
+
+<span class="c"># Output Data Rate</span>
+
+<span class="n">RATE_OFF</span> <span class="o">=</span> <span class="mh">0x00</span>
+<span class="n">RATE_25HZ</span> <span class="o">=</span> <span class="mh">0x01</span>
+<span class="n">RATE_50HZ</span> <span class="o">=</span> <span class="mh">0x02</span>
+<span class="n">RATE_100HZ</span> <span class="o">=</span> <span class="mh">0x03</span>
+<span class="n">RATE_166HZ</span> <span class="o">=</span> <span class="mh">0x04</span>
+<span class="n">RATE_200HZ</span> <span class="o">=</span> <span class="mh">0x05</span>
+<span class="n">RATE_250HZ</span> <span class="o">=</span> <span class="mh">0x06</span>
+<span class="n">RATE_500HZ</span> <span class="o">=</span> <span class="mh">0x07</span>
+<span class="n">RATE_1KHZ</span> <span class="o">=</span> <span class="mh">0x08</span>
+
+<span class="c"># Interrupt Mode</span>
+
+<span class="n">INTERRUPT_DISABLED</span> <span class="o">=</span> <span class="mh">0x00</span>
+<span class="n">INTERRUPT_ENABLED</span> <span class="o">=</span> <span class="mh">0x01</span>
+
+<span class="c"># Trigger Mode</span>
+
+<span class="n">TRIGGER_DISABLED</span> <span class="o">=</span> <span class="mh">0x00</span>
+<span class="n">TRIGGER_ENABLED</span> <span class="o">=</span> <span class="mh">0x01</span>
+
+<span class="c"># Filter Mode</span>
+
+<span class="n">FILTER_0PT</span> <span class="o">=</span> <span class="mh">0x00</span>
+<span class="n">FILTER_1PT</span> <span class="o">=</span> <span class="mh">0x01</span>
+<span class="n">FILTER_3PT</span> <span class="o">=</span> <span class="mh">0x03</span>
+<span class="n">FILTER_7PT</span> <span class="o">=</span> <span class="mh">0x07</span>
+<span class="n">FILTER_15PT</span> <span class="o">=</span> <span class="mh">0x0F</span>
+<span class="n">FILTER_31PT</span> <span class="o">=</span> <span class="mh">0x1F</span>
+<span class="n">FILTER_63PT</span> <span class="o">=</span> <span class="mh">0x3F</span>
+<span class="n">FILTER_127PT</span> <span class="o">=</span> <span class="mh">0x7F</span>
+<span class="n">FILTER_255PT</span> <span class="o">=</span> <span class="mh">0xFF</span>
+
+<span class="c"># Resolution Mode</span>
+
+<span class="n">RESOLUTION_1pF</span> <span class="o">=</span> <span class="mh">0x00</span>
+<span class="n">RESOLUTION_100fF</span> <span class="o">=</span> <span class="mh">0x01</span>
+<span class="n">RESOLUTION_10fF</span> <span class="o">=</span> <span class="mh">0x02</span>
+<span class="n">RESOLUTION_1fF</span> <span class="o">=</span> <span class="mh">0x03</span>
+
+<span class="c"># Config Transfer</span>
+
+<span class="n">PADDING</span> <span class="o">=</span> <span class="mh">0x00</span>
+
+<span class="c"># Configuration Setup</span>
+
+<span class="n">ODR_MODE</span> <span class="o">=</span> <span class="n">RATE_50HZ</span>
+<span class="n">INTERRUPT_MODE</span> <span class="o">=</span> <span class="n">INTERRUPT_DISABLED</span>
+<span class="n">TRIGGER_MODE</span> <span class="o">=</span> <span class="n">TRIGGER_DISABLED</span>
+<span class="n">FILTER_MODE</span> <span class="o">=</span> <span class="n">FILTER_1PT</span>
+<span class="n">RESOLUTION_MODE</span> <span class="o">=</span> <span class="n">RESOLUTION_100fF</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">StretchSense Classes &amp; generators for the different type of sensors.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="StretchSensePeripheral"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSensePeripheral">[docs]</a><span class="k">class</span> <span class="nc">StretchSensePeripheral</span><span class="p">:</span>
+    <span class="c">#print(&quot;\033[0;35;40m StretchSensePeripheral()\033[0m&quot;)</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class which create a StretchSense peripheral with all the argument that can be used.</span>
+
+<span class="sd">    :param addr: string:</span>
+<span class="sd">        Contains the address of the device : &quot;xx:xx:xx:xx:xx&quot;.</span>
+
+<span class="sd">    :param uuid: string:</span>
+<span class="sd">        Contains the UUID of the device &quot;xxxxxxxx-7374-7265-7563-6873656e7365&quot;.</span>
+
+<span class="sd">    :param value: int:</span>
+<span class="sd">        Contains the value of the device in hexadecimal.</span>
+
+<span class="sd">    :param channelNumber: int:</span>
+<span class="sd">        For devices with multiple channels, contains the number of the channel.</span>
+
+<span class="sd">    :param gen: int:</span>
+<span class="sd">        This number is the generation of the device.</span>
+
+<span class="sd">    :param color: string:</span>
+<span class="sd">        This gives the device a color to use when displayed.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m __init__().StretchSensePeripheral()\033[0m&quot;)</span>
+
+        <span class="c"># Mac Address</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+        <span class="c"># Unique Number Identifier</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+        <span class="c"># Current Capacitance value of the sensor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mh">0x0000</span>
+
+        <span class="c"># A unique number for each sensor, based on the order when the sensor is connected to the device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c"># Generation of the circuit, we initialize it at a Generation 2 which the common One-Channel sensor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+        <span class="c"># Background color of the circuit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">color</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+</div>
+<div class="viewcode-block" id="StretchSenseAPI"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI">[docs]</a><span class="k">class</span> <span class="nc">StretchSenseAPI</span><span class="p">():</span>
+    <span class="c">#print(&quot;\033[0;35;40m StretchSenseAPI()\033[0m&quot;)</span>
+
+    <span class="c"># This is the list of peripherals we are using for the SPI</span>
+
+    <span class="n">listPeripheralSpi</span> <span class="o">=</span> <span class="p">[</span><span class="n">StretchSensePeripheral</span><span class="p">()]</span>
+
+    <span class="c"># This is the list of peripherals we are using to connect to the BLE</span>
+
+    <span class="n">listPeripheralInUse</span> <span class="o">=</span> <span class="p">[</span><span class="n">btle</span><span class="o">.</span><span class="n">Peripheral</span><span class="p">()]</span>
+
+    <span class="c"># This is the list of StretchSense Bluetooth peripherals detected by the Raspberry Pi during a scan event</span>
+
+    <span class="n">listPeripheralAvailable</span> <span class="o">=</span> <span class="p">[</span><span class="n">StretchSensePeripheral</span><span class="p">()]</span>
+
+    <span class="c"># This is the list of StretchSense Bluetooth peripherals which are connected to the Raspberry Pi after being scanned</span>
+
+    <span class="n">listPeripheralIsConnected</span> <span class="o">=</span> <span class="p">[</span><span class="n">StretchSensePeripheral</span><span class="p">()]</span>
+
+    <span class="c"># This is the list of StretchSense Bluetooth peripherals which are saved to the Raspberry Pi after being connected once</span>
+
+    <span class="n">listPeripheralIsOnceConnected</span> <span class="o">=</span> <span class="p">[</span><span class="n">btle</span><span class="o">.</span><span class="n">Peripheral</span><span class="p">()]</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Variables : Services &amp; Characteristics UUID</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># The name we use to filter BLE scan results and find only StretchSense&#39;s sensors</span>
+    <span class="n">deviceName</span> <span class="o">=</span> <span class="s">&#39;StretchSense&#39;</span>
+
+    <span class="c"># The UUID used to filter Bluetooth scan results and find the services from StretchSense sensors Gen 3</span>
+    <span class="n">serviceUUID3</span> <span class="o">=</span> <span class="s">&#39;00001701-7374-7265-7563-6873656e7365&#39;</span>
+    <span class="c"># The UUID used to filter the device characteristics and find the &quot;data characteristic&quot; from StretchSense sensors Gen 3</span>
+    <span class="n">dataUUID3</span> <span class="o">=</span> <span class="s">&#39;00001702-7374-7265-7563-6873656e7365&#39;</span>
+
+    <span class="c"># The UUID used to filter Bluetooth scan results and find the services from StretchSense sensors Gen 2</span>
+    <span class="n">serviceUUID2</span> <span class="o">=</span> <span class="s">&#39;00001501-7374-7265-7563-6873656e7365&#39;</span>
+    <span class="c"># The UUID used to filter the device characteristics and find the &quot;data characteristic&quot; from StretchSense sensors Gen 2</span>
+    <span class="n">dataUUID2</span> <span class="o">=</span> <span class="s">&#39;00001502-7374-7265-7563-6873656e7365&#39;</span>
+
+    <span class="c"># The UUID used to filter Bluetooth scan results and find the services from StretchSense circuit 10TT</span>
+    <span class="n">serviceUUID10TT</span> <span class="o">=</span> <span class="s">&#39;00601001-7374-7265-7563-6873656e7365&#39;</span>
+    <span class="c"># The UUID used to filter the device characteristics and find the &quot;data characteristic&quot; from StretchSense circuit 10TT</span>
+    <span class="n">dataUUID10TT</span> <span class="o">=</span> <span class="s">&#39;00601002-7374-7265-7563-6873656e7365&#39;</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Variables : Set sensors &amp; info</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># Number of data samples within the filtering array</span>
+
+    <span class="n">numberOfSample</span> <span class="o">=</span> <span class="mi">30</span>
+
+    <span class="c"># Initialisation value of the sampling time value (SamplingTime = (value +1)*40ms)</span>
+
+    <span class="n">samplingTimeNumber</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c"># Sized of the filter based on the number of samples</span>
+
+    <span class="n">filteringNumber</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c"># Feedback from the sensor</span>
+
+    <span class="n">informationFeedBack</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Bluepy buffer Scanning class.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">class</span> <span class="nc">ScanPrint</span><span class="p">(</span><span class="n">btle</span><span class="o">.</span><span class="n">DefaultDelegate</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;33;40m ScanPrint()\033[0m&quot;)</span>
+
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opts</span><span class="p">):</span>
+            <span class="c">#print(&quot;\033[0;33;40m __init__().ScanPrint()\033[0m&quot;)</span>
+            <span class="n">btle</span><span class="o">.</span><span class="n">DefaultDelegate</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">opts</span> <span class="o">=</span> <span class="n">opts</span>
+
+        <span class="k">def</span> <span class="nf">handleDiscovery</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dev</span><span class="p">,</span> <span class="n">isNewDev</span><span class="p">,</span> <span class="n">isNewData</span><span class="p">):</span>
+            <span class="c">#print(&quot;\033[0;33;40m handleDiscovery()\033[0m&quot;)</span>
+
+            <span class="k">if</span> <span class="n">isNewDev</span><span class="p">:</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="s">&quot;new&quot;</span>
+            <span class="k">elif</span> <span class="n">isNewData</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="o">.</span><span class="n">new</span><span class="p">:</span>
+                    <span class="k">return</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="s">&quot;update&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="o">.</span><span class="n">all</span><span class="p">:</span>
+                    <span class="k">return</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="s">&quot;old&quot;</span>
+
+            <span class="k">if</span> <span class="n">dev</span><span class="o">.</span><span class="n">rssi</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">opts</span><span class="o">.</span><span class="n">sensitivity</span><span class="p">:</span>
+                <span class="k">return</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dev</span><span class="o">.</span><span class="n">scanData</span><span class="p">:</span>
+                <span class="k">print</span> <span class="p">(</span><span class="s">&#39;</span><span class="se">\t</span><span class="s">(no data)&#39;</span><span class="p">)</span>
+            <span class="k">print</span><span class="p">()</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Serial Peripheral Interface Functions</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StretchSenseAPI.spi_generateTenChannel"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.spi_generateTenChannel">[docs]</a>    <span class="k">def</span> <span class="nf">spi_generateTenChannel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m spi_generateTenChannel()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function generate ten peripheral type StretchSensePeripheral used for the SPI.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">newSensor1</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor1</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="s">&quot;SPI0&quot;</span>
+        <span class="n">newSensor1</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span>
+        <span class="n">newSensor1</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor1</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">newSensor1</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">newSensor2</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor2</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="s">&quot;SPI0&quot;</span>
+        <span class="n">newSensor2</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span>
+        <span class="n">newSensor2</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor2</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">newSensor2</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">newSensor3</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor3</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="s">&quot;SPI0&quot;</span>
+        <span class="n">newSensor3</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span>
+        <span class="n">newSensor3</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor3</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">newSensor3</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">2</span>
+
+        <span class="n">newSensor4</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor4</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="s">&quot;SPI0&quot;</span>
+        <span class="n">newSensor4</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span>
+        <span class="n">newSensor4</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor4</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">newSensor4</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">3</span>
+
+        <span class="n">newSensor5</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor5</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="s">&quot;SPI0&quot;</span>
+        <span class="n">newSensor5</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span>
+        <span class="n">newSensor5</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor5</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">newSensor5</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">4</span>
+
+        <span class="n">newSensor6</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor6</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="s">&quot;SPI0&quot;</span>
+        <span class="n">newSensor6</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span>
+        <span class="n">newSensor6</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor6</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">newSensor6</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">5</span>
+
+        <span class="n">newSensor7</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor7</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="s">&quot;SPI0&quot;</span>
+        <span class="n">newSensor7</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span>
+        <span class="n">newSensor7</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor7</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">newSensor7</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">6</span>
+
+        <span class="n">newSensor8</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor8</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="s">&quot;SPI0&quot;</span>
+        <span class="n">newSensor8</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span>
+        <span class="n">newSensor8</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor8</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">newSensor8</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">7</span>
+
+        <span class="n">newSensor9</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor9</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="s">&quot;SPI0&quot;</span>
+        <span class="n">newSensor9</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span>
+        <span class="n">newSensor9</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor9</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">newSensor9</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">8</span>
+
+        <span class="n">newSensor10</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor10</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="s">&quot;SPI0&quot;</span>
+        <span class="n">newSensor10</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span>
+        <span class="n">newSensor10</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor10</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">newSensor10</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">9</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor8</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor9</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor10</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.spi_setup"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.spi_setup">[docs]</a>    <span class="k">def</span> <span class="nf">spi_setup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;33;40m spi_setup()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Start the setup of the SPI communication.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Creating a new setup requires get rid of the old one</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="p">[</span><span class="mi">0</span><span class="p">:]</span>
+
+        <span class="c"># Initialise SPI &amp; GPIO ports</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myDevice</span> <span class="o">=</span> <span class="n">spidev</span><span class="o">.</span><span class="n">SpiDev</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myDevice</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myDevice</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">SPI0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myDevice</span><span class="o">.</span><span class="n">max_speed_hz</span> <span class="o">=</span> <span class="mi">1000</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myDevice</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myDevice</span><span class="o">.</span><span class="n">lsbfirst</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">capacitanceScalingFactor</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rawData</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">20</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spi_generateTenChannel</span><span class="p">()</span>
+
+        <span class="c"># Initialise the data ready and chip enable pins</span>
+        <span class="n">GPIO</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">INTERRUPT_PIN</span><span class="p">,</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">IN</span><span class="p">)</span>
+        <span class="n">GPIO</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">CE_PIN0</span><span class="p">,</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">OUT</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="n">GPIO</span><span class="o">.</span><span class="n">HIGH</span><span class="p">)</span>
+        <span class="n">GPIO</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">TRIGGER_PIN</span><span class="p">,</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">OUT</span><span class="p">)</span>
+
+        <span class="c"># Configure 16FGV1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spi_writeConfiguration</span><span class="p">()</span>
+
+        <span class="c"># Give the circuit the time to set up</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
+
+        <span class="c"># Get capacitance scaling factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">capacitanceScalingFactor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spi_getCapacitanceScalingFactor</span><span class="p">(</span><span class="n">RESOLUTION_MODE</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.spi_mode"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.spi_mode">[docs]</a>    <span class="k">def</span> <span class="nf">spi_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;spi_mode()&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        This function is called before using the SPI transmission, it verify which mode we are using.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">INTERRUPT_MODE</span> <span class="o">==</span> <span class="n">INTERRUPT_DISABLED</span> <span class="o">&amp;</span> <span class="n">TRIGGER_MODE</span> <span class="o">==</span> <span class="n">TRIGGER_DISABLED</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">spi_continuousModeCapacitance</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">INTERRUPT_MODE</span> <span class="o">==</span> <span class="n">INTERRUPT_ENABLED</span> <span class="o">&amp;</span> <span class="n">TRIGGER_MODE</span> <span class="o">==</span> <span class="n">TRIGGER_DISABLED</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">spi_continuousModeCapacitance</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">INTERRUPT_MODE</span> <span class="o">==</span> <span class="n">INTERRUPT_DISABLED</span> <span class="o">&amp;</span> <span class="n">TRIGGER_MODE</span> <span class="o">==</span> <span class="n">TRIGGER_ENABLED</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">spi_triggerModeCapacitance</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.spi_triggerModeCapacitance"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.spi_triggerModeCapacitance">[docs]</a>    <span class="k">def</span> <span class="nf">spi_triggerModeCapacitance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m spi_triggerModeCapacitance()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        When TRIGGER is enable we use this SPI function.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Trigger a sample to begin</span>
+        <span class="n">GPIO</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">TRIGGER_PIN</span><span class="p">,</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">HIGH</span><span class="p">)</span>
+        <span class="n">GPIO</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">TRIGGER_PIN</span><span class="p">,</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">LOW</span><span class="p">)</span>
+
+        <span class="c"># Allow the circuit to start a sample</span>
+
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+
+        <span class="c"># Read the sensor data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">readData</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spi_readCapacitance</span><span class="p">()</span>
+
+        <span class="c"># Convert the raw data to capacitance</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">spi_extractCapacitance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">readData</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.spi_continuousModeCapacitance"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.spi_continuousModeCapacitance">[docs]</a>    <span class="k">def</span> <span class="nf">spi_continuousModeCapacitance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m spi_continuousModeCapacitance()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        When INTERRUPT is enable or in continuous mode we use this SPI function.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Check if the interrupt mode is enabled (in configuration)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">INTERRUPT_MODE</span> <span class="o">==</span> <span class="n">INTERRUPT_ENABLED</span><span class="p">):</span>
+            <span class="c"># Don&#39;t do anything until the interrupt goes low</span>
+            <span class="k">while</span><span class="p">(</span><span class="n">GPIO</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="n">INTERRUPT_PIN</span><span class="p">)</span> <span class="o">==</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">HIGH</span><span class="p">):</span>
+                <span class="k">pass</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">readData</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spi_readCapacitance</span><span class="p">()</span>
+
+        <span class="c"># Convert the raw data to capacitance</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">spi_extractCapacitance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">readData</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+
+        <span class="c"># Wait for the next data packet to start sampling</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">INTERRUPT_MODE</span> <span class="o">==</span> <span class="n">INTERRUPT_ENABLED</span><span class="p">):</span>
+            <span class="c"># Don&#39;t do anything until the interruptcoes high</span>
+            <span class="k">while</span><span class="p">(</span><span class="n">GPIO</span><span class="o">.</span><span class="n">input</span><span class="p">(</span><span class="n">INTERRUPT_PIN</span><span class="p">)</span> <span class="o">==</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">LOW</span><span class="p">):</span>
+                <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.spi_writeConfiguration"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.spi_writeConfiguration">[docs]</a>    <span class="k">def</span> <span class="nf">spi_writeConfiguration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m spi_writeConfiguration()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Function called in spi_setup() to write the configuration on the SPI bus.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="c"># 16FGV1.0 requires a configuration package to start streaming the data</span>
+
+        <span class="c"># Set the chip select to low to select device</span>
+        <span class="n">GPIO</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">CE_PIN0</span><span class="p">,</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">LOW</span><span class="p">)</span>
+
+        <span class="c"># Select configure package and sets it</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">myDevice</span><span class="o">.</span><span class="n">xfer2</span><span class="p">([</span><span class="n">CONFIG</span><span class="p">,</span> <span class="n">ODR_MODE</span><span class="p">,</span> <span class="n">INTERRUPT_MODE</span><span class="p">,</span> <span class="n">TRIGGER_MODE</span><span class="p">,</span> <span class="n">FILTER_MODE</span><span class="p">,</span> <span class="n">RESOLUTION_MODE</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+        <span class="c"># Take the chip select to high to de-select</span>
+        <span class="n">GPIO</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">CE_PIN0</span><span class="p">,</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">HIGH</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.spi_readCapacitance"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.spi_readCapacitance">[docs]</a>    <span class="k">def</span> <span class="nf">spi_readCapacitance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m spi_readCapacitance()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Function which read the capacitance in hexadecimal in the SPI bus.</span>
+
+<span class="sd">        :returns: int :</span>
+<span class="sd">            raw sensing from the 16FGV1.0</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="c"># 16FGV1.0 transmits data in the form of 10, 16bit capacitance values</span>
+
+        <span class="c"># Set the chip select to low to select the device</span>
+        <span class="n">GPIO</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">CE_PIN0</span><span class="p">,</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">LOW</span><span class="p">)</span>
+
+        <span class="c"># Select Data package to return values</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">myDevice</span><span class="o">.</span><span class="n">xfer2</span><span class="p">([</span><span class="n">DATA</span><span class="p">,</span> <span class="n">PADDING</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">del</span> <span class="n">raw</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">raw</span>
+
+        <span class="c">#Take the chip select to high to de-select</span>
+        <span class="n">GPIO</span><span class="o">.</span><span class="n">output</span><span class="p">(</span><span class="n">CE_PIN0</span><span class="p">,</span> <span class="n">GPIO</span><span class="o">.</span><span class="n">HIGH</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.spi_getCapacitanceScalingFactor"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.spi_getCapacitanceScalingFactor">[docs]</a>    <span class="k">def</span> <span class="nf">spi_getCapacitanceScalingFactor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resolutionConfig</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;33;40m spi_getCapacitanceScalingFactor()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        The 16FGV1.0 has an adjustable LSB resolution this function scales raw data to capacitance based on</span>
+<span class="sd">        the configuration.</span>
+
+<span class="sd">        :param resolutionConfig: int :</span>
+<span class="sd">            Resolution set on the SPI bus during spi_writeConfiguration.</span>
+
+<span class="sd">        :returns: int :</span>
+<span class="sd">            The scale of the resolution.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">resolutionConfig</span> <span class="o">==</span> <span class="n">RESOLUTION_1pF</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1</span>
+
+        <span class="k">elif</span> <span class="n">resolutionConfig</span> <span class="o">==</span> <span class="n">RESOLUTION_100fF</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">10</span>
+
+        <span class="k">elif</span> <span class="n">resolutionConfig</span> <span class="o">==</span> <span class="n">RESOLUTION_10fF</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">100</span>
+
+        <span class="k">elif</span> <span class="n">resolutionConfig</span> <span class="o">==</span> <span class="n">RESOLUTION_1fF</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">1000</span>
+
+        <span class="k">return</span> <span class="mi">1</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.spi_extractCapacitance"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.spi_extractCapacitance">[docs]</a>    <span class="k">def</span> <span class="nf">spi_extractCapacitance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m spi_extractCapacitance()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Does the conversion of the raw value received by the 16FGV1.0 into a decimal value.</span>
+
+<span class="sd">        :param raw: int :</span>
+<span class="sd">            Raw is the raw value that we read on the SPI bus.</span>
+<span class="sd">        :param channel: int :</span>
+<span class="sd">            Number from 0 to 9 corresponding of the channel number to convert the raw value.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">capacitance</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">numberOfSpiPeripheral</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">numberOfSpiPeripheral</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">myPeripheral</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="p">:</span>
+
+                <span class="k">if</span> <span class="n">channel</span> <span class="o">==</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">channelNumber</span><span class="p">:</span>
+                    <span class="n">capacitance</span> <span class="o">=</span> <span class="n">raw</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">channel</span><span class="p">]</span> <span class="o">*</span> <span class="mi">256</span> <span class="o">+</span> <span class="n">raw</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">channel</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                    <span class="n">capacitance</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">capacitanceScalingFactor</span>
+                    <span class="n">myPeripheral</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">capacitance</span>
+                    <span class="c">#print(&quot;MainmyPeripheral.value = &quot;, myPeripheral.value)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.spi_listToCsv"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.spi_listToCsv">[docs]</a>    <span class="k">def</span> <span class="nf">spi_listToCsv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m spi_listToCsv()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Display the values in a csv format in the terminal.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">listToCsv</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="n">numberOfSpiPeripheralConnected</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">numberOfSpiPeripheralConnected</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">myPeripheral</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="p">:</span>
+                <span class="n">listToCsv</span> <span class="o">+=</span> <span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> ,&quot;</span> <span class="o">%</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">listToCsv</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.spi_getValuesCsv"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.spi_getValuesCsv">[docs]</a>    <span class="k">def</span> <span class="nf">spi_getValuesCsv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m spi_getValuesCsv()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Return the values in a csv format.</span>
+
+<span class="sd">        :returns: string :</span>
+<span class="sd">            16FGV1.0 values in a csv format.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">listToReturn</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="n">numberOfSpiPeripheralConnected</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="n">numberOfSpiPeripheralConnected</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">myPeripheral</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span><span class="p">:</span>
+                <span class="n">listToReturn</span> <span class="o">+=</span> <span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> ,&quot;</span> <span class="o">%</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">listToReturn</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.spi_getListPeripheral"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.spi_getListPeripheral">[docs]</a>    <span class="k">def</span> <span class="nf">spi_getListPeripheral</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m spi_getListPeripheral()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Return a list of all peripheral created by spi_generateTenChannel().</span>
+
+<span class="sd">        :returns: list :</span>
+<span class="sd">            List containing all the information of each SPI peripheral connected.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralSpi</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.spi_close"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.spi_close">[docs]</a>    <span class="k">def</span> <span class="nf">spi_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m spi_close()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Close the SPI transmission.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">myDevice</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Functions : Scan, Print, Connect/Disconnect &amp; Update</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StretchSenseAPI.ble_printAllPeripheralsAvailable"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_printAllPeripheralsAvailable">[docs]</a>    <span class="k">def</span> <span class="nf">ble_printAllPeripheralsAvailable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_printAllPeripheralsAvailable()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Display all the StretchSense&#39;s device addresses available around.</span>
+
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">numberOfPeripheralAvailable</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralAvailable</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">numberOfPeripheralAvailable</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">return</span> <span class="k">print</span><span class="p">(</span><span class="s">&quot;No devices available&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">numberOfPeripheralAvailable</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Number of StretchSense devices detected : &quot;</span><span class="p">,</span> <span class="n">numberOfPeripheralAvailable</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">myPeripheralAvailable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralAvailable</span><span class="p">:</span>
+
+                <span class="k">if</span> <span class="n">myPeripheralAvailable</span><span class="o">.</span><span class="n">addr</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;StretchSense device : </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">myPeripheralAvailable</span><span class="o">.</span><span class="n">addr</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_printAllPeripheralsConnected"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_printAllPeripheralsConnected">[docs]</a>    <span class="k">def</span> <span class="nf">ble_printAllPeripheralsConnected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_printAllPeripheralsConnected()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Display all the StretchSense&#39;s device addresses connected.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">numberOfPeripheralConnected</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">numberOfPeripheralConnected</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">return</span> <span class="k">print</span><span class="p">(</span><span class="s">&quot;No sensors connected&quot;</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">numberOfPeripheralConnected</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">myPeripheralConnected</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">:</span>
+
+                <span class="k">if</span> <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">addr</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;StretchSense Sensor Connected : </span><span class="si">%s</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">addr</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_scanning"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_scanning">[docs]</a>    <span class="k">def</span> <span class="nf">ble_scanning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scanTime</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_scanning()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Scan for StretchSense devices in the area and store them in listPeripheralAvailable.</span>
+
+<span class="sd">        :param scanTime: int :</span>
+<span class="sd">            Time to scan for.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;-i&#39;</span><span class="p">,</span> <span class="s">&#39;--hci&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Interface number for scan&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;-t&#39;</span><span class="p">,</span> <span class="s">&#39;--timeout&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Scan delay, 0 for continuous&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;-s&#39;</span><span class="p">,</span> <span class="s">&#39;--sensitivity&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=-</span><span class="mi">128</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s">&#39;dBm value for filtering far devices&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;-d&#39;</span><span class="p">,</span> <span class="s">&#39;--discover&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Connect and discover service to scanned devices&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;-a&#39;</span><span class="p">,</span> <span class="s">&#39;--all&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Display duplicate adv responses, by default show new + updated&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;-n&#39;</span><span class="p">,</span> <span class="s">&#39;--new&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Display only new adv responses, by default show new + updated&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;-v&#39;</span><span class="p">,</span> <span class="s">&#39;--verbose&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s">&#39;Increase output verbosity&#39;</span><span class="p">)</span>
+        <span class="n">arg</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Debugging</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">verbose</span>
+        <span class="n">scanner</span> <span class="o">=</span> <span class="n">btle</span><span class="o">.</span><span class="n">Scanner</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">hci</span><span class="p">)</span><span class="o">.</span><span class="n">withDelegate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ScanPrint</span><span class="p">(</span><span class="n">arg</span><span class="p">))</span>
+        <span class="n">devicesAvailable</span> <span class="o">=</span> <span class="n">scanner</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">scanTime</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">devices</span> <span class="ow">in</span> <span class="n">devicesAvailable</span><span class="p">:</span>
+            <span class="n">deviceAlreadyInTheList</span> <span class="o">=</span> <span class="bp">False</span>
+
+            <span class="k">for</span> <span class="p">(</span><span class="n">sdid</span><span class="p">,</span> <span class="n">desc</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="n">devices</span><span class="o">.</span><span class="n">getScanData</span><span class="p">():</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">val</span> <span class="o">==</span> <span class="n">StretchSenseAPI</span><span class="o">.</span><span class="n">deviceName</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">myDeviceInTheList</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralAvailable</span><span class="p">:</span>
+
+                        <span class="k">if</span> <span class="p">(</span><span class="n">myDeviceInTheList</span><span class="o">.</span><span class="n">addr</span> <span class="o">==</span> <span class="n">devices</span><span class="o">.</span><span class="n">addr</span><span class="p">):</span>
+                            <span class="n">deviceAlreadyInTheList</span> <span class="o">=</span> <span class="bp">True</span>
+
+                    <span class="k">if</span> <span class="n">deviceAlreadyInTheList</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralAvailable</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">devices</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_connectOnePeripheral"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_connectOnePeripheral">[docs]</a>    <span class="k">def</span> <span class="nf">ble_connectOnePeripheral</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">myDeviceAddr</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_connectOnePeripheral()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Connect one StretchSense device which is available using its address, generate one or more</span>
+<span class="sd">        peripherals as StretchSensePeripheral and store them into listPeripheralIsConnected.</span>
+<span class="sd">        The peripheral is also stored in listPeripheralInUse.</span>
+
+<span class="sd">        :param myDeviceAddr: string :</span>
+<span class="sd">            Address of the device that you want to connect.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">numberOfPeripheralAvailable</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralAvailable</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">numberOfPeripheralAvailable</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">myPeripheralAvailable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralAvailable</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">myPeripheralAvailable</span><span class="o">.</span><span class="n">addr</span> <span class="o">==</span> <span class="n">myDeviceAddr</span><span class="p">):</span>
+                    <span class="c">#print(&#39;Address we are trying to connect to : &#39;, myDeviceAddr)</span>
+                    <span class="n">myPeripheralConnected</span> <span class="o">=</span> <span class="n">btle</span><span class="o">.</span><span class="n">Peripheral</span><span class="p">(</span><span class="n">myPeripheralAvailable</span><span class="p">)</span>
+                    <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">setDelegate</span><span class="p">(</span><span class="n">StretchSenseDelegate</span><span class="p">(</span><span class="n">myPeripheralConnected</span><span class="p">))</span>
+                    <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">deviceAddr</span> <span class="o">=</span> <span class="n">myDeviceAddr</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">myPeripheralConnected</span><span class="p">)</span>
+                    <span class="n">listOfServices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">services</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">services</span><span class="p">:</span> <span class="n">services</span><span class="o">.</span><span class="n">hndStart</span><span class="p">)</span>
+
+                    <span class="k">for</span> <span class="n">services</span> <span class="ow">in</span> <span class="n">listOfServices</span><span class="p">:</span>
+
+                        <span class="k">if</span> <span class="n">services</span><span class="o">.</span><span class="n">hndStart</span> <span class="o">==</span> <span class="n">services</span><span class="o">.</span><span class="n">hndEnd</span><span class="p">:</span>
+                            <span class="k">continue</span>
+
+                        <span class="k">if</span> <span class="n">services</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID2</span><span class="p">:</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="s">&quot;2&quot;</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID2</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">ble_generateOneChannel</span><span class="p">(</span><span class="n">myPeripheralConnected</span><span class="p">)</span>
+                            <span class="n">characteristics</span> <span class="o">=</span> <span class="n">services</span><span class="o">.</span><span class="n">getCharacteristics</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">writeCharacteristic</span><span class="p">(</span><span class="n">characteristics</span><span class="o">.</span><span class="n">valHandle</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="s">&quot;</span><span class="se">\x01\x00</span><span class="s">&quot;</span><span class="p">)</span>
+                            <span class="k">continue</span>
+
+                        <span class="k">if</span> <span class="n">services</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span><span class="p">:</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="s">&quot;3&quot;</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">ble_generateTenChannel</span><span class="p">(</span><span class="n">myPeripheralConnected</span><span class="p">)</span>
+                            <span class="n">characteristics</span> <span class="o">=</span> <span class="n">services</span><span class="o">.</span><span class="n">getCharacteristics</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">writeCharacteristic</span><span class="p">(</span><span class="n">characteristics</span><span class="o">.</span><span class="n">valHandle</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="s">&quot;</span><span class="se">\x01\x00</span><span class="s">&quot;</span><span class="p">)</span>
+                            <span class="k">continue</span>
+
+                        <span class="k">if</span> <span class="n">services</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID10TT</span><span class="p">:</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="s">&quot;10TT&quot;</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID10TT</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">ble_generateTenChannel</span><span class="p">(</span><span class="n">myPeripheralConnected</span><span class="p">)</span>
+                            <span class="n">characteristics</span> <span class="o">=</span> <span class="n">services</span><span class="o">.</span><span class="n">getCharacteristics</span><span class="p">()</span>
+                            <span class="k">for</span> <span class="n">char</span> <span class="ow">in</span> <span class="n">characteristics</span><span class="p">:</span>
+                                <span class="k">if</span> <span class="n">char</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataUUID10TT</span><span class="p">:</span>
+                                    <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">writeCharacteristic</span><span class="p">(</span><span class="n">char</span><span class="o">.</span><span class="n">valHandle</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="s">&quot;</span><span class="se">\x01\x00</span><span class="s">&quot;</span><span class="p">)</span>
+                            <span class="k">continue</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_connectAllPeripheral"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_connectAllPeripheral">[docs]</a>    <span class="k">def</span> <span class="nf">ble_connectAllPeripheral</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\033</span><span class="s">[0;35;40m ble_connectAllPeripheral()</span><span class="se">\033</span><span class="s">[0m&quot;</span><span class="p">)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Connect all StretchSense devices which are available using their addresses, generate the</span>
+<span class="sd">        peripherals as StretchSensePeripheral and store them into listPeripheralIsConnected.</span>
+<span class="sd">        Peripherals are also stored in listPeripheralInUse.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">numberOfPeripheralAvailable</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralAvailable</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="n">numberOfPeripheralAvailable</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">myPeripheralAvailable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralAvailable</span><span class="p">:</span>
+
+                <span class="k">if</span> <span class="n">myPeripheralAvailable</span><span class="o">.</span><span class="n">addr</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+                    <span class="c">#print(&#39;Address we are trying to connect to : &#39;, myPeripheralAvailable.addr)</span>
+                    <span class="n">myPeripheralConnected</span> <span class="o">=</span> <span class="n">btle</span><span class="o">.</span><span class="n">Peripheral</span><span class="p">(</span><span class="n">myPeripheralAvailable</span><span class="p">)</span>
+                    <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">setDelegate</span><span class="p">(</span><span class="n">StretchSenseDelegate</span><span class="p">(</span><span class="n">myPeripheralConnected</span><span class="p">))</span>
+                    <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">deviceAddr</span> <span class="o">=</span> <span class="n">myPeripheralAvailable</span><span class="o">.</span><span class="n">addr</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">myPeripheralConnected</span><span class="p">)</span>
+                    <span class="n">listOfServices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">services</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">services</span><span class="p">:</span> <span class="n">services</span><span class="o">.</span><span class="n">hndStart</span><span class="p">)</span>
+
+                    <span class="k">for</span> <span class="n">services</span> <span class="ow">in</span> <span class="n">listOfServices</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">services</span><span class="o">.</span><span class="n">hndStart</span> <span class="o">==</span> <span class="n">services</span><span class="o">.</span><span class="n">hndEnd</span><span class="p">:</span>
+                            <span class="k">continue</span>
+
+                        <span class="k">if</span> <span class="n">services</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID2</span><span class="p">:</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="s">&#39;2&#39;</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID2</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">ble_generateOneChannel</span><span class="p">(</span><span class="n">myPeripheralConnected</span><span class="p">)</span>
+                            <span class="n">characteristics</span> <span class="o">=</span> <span class="n">services</span><span class="o">.</span><span class="n">getCharacteristics</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">writeCharacteristic</span><span class="p">(</span><span class="n">characteristics</span><span class="o">.</span><span class="n">valHandle</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="s">&quot;</span><span class="se">\x01\x00</span><span class="s">&quot;</span><span class="p">)</span>
+                            <span class="k">continue</span>
+
+                        <span class="k">if</span> <span class="n">services</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span><span class="p">:</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="s">&#39;3&#39;</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">ble_generateTenChannel</span><span class="p">(</span><span class="n">myPeripheralConnected</span><span class="p">)</span>
+                            <span class="n">characteristics</span> <span class="o">=</span> <span class="n">services</span><span class="o">.</span><span class="n">getCharacteristics</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">writeCharacteristic</span><span class="p">(</span><span class="n">characteristics</span><span class="o">.</span><span class="n">valHandle</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="s">&quot;</span><span class="se">\x01\x00</span><span class="s">&quot;</span><span class="p">)</span>
+                            <span class="k">continue</span>
+
+                        <span class="k">if</span> <span class="n">services</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID10TT</span><span class="p">:</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="s">&#39;10TT&#39;</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID10TT</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">ble_generateTenChannel</span><span class="p">(</span><span class="n">myPeripheralConnected</span><span class="p">)</span>
+                            <span class="n">characteristics</span> <span class="o">=</span> <span class="n">services</span><span class="o">.</span><span class="n">getCharacteristics</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">writeCharacteristic</span><span class="p">(</span><span class="n">characteristics</span><span class="o">.</span><span class="n">valHandle</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="s">&quot;</span><span class="se">\x01\x00</span><span class="s">&quot;</span><span class="p">)</span>
+                            <span class="k">continue</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_disconnectOnePeripheral"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_disconnectOnePeripheral">[docs]</a>    <span class="k">def</span> <span class="nf">ble_disconnectOnePeripheral</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">myDeviceAddr</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_disconnectOnePeripheral()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Disconnect one StretchSense device which is connected using its address, and remove it from</span>
+<span class="sd">        listPeripheralIsConnected.</span>
+<span class="sd">        The peripheral is also removed from listPeripheralInUse.</span>
+
+<span class="sd">        :param myDeviceAddr: string :</span>
+<span class="sd">            Address of the device that you want to disconnect.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">numberOfPeripheralConnected</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">numberOfPeripheralConnected</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">myPeripheralConnected</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">:</span>
+
+                <span class="k">if</span> <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">addr</span> <span class="o">==</span> <span class="n">myDeviceAddr</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">10</span><span class="p">]</span>
+                    <span class="k">break</span>
+                <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="k">for</span> <span class="n">myPeripheralInUse</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span><span class="p">:</span>
+
+                <span class="k">if</span> <span class="n">myPeripheralInUse</span><span class="o">.</span><span class="n">addr</span> <span class="o">==</span> <span class="n">myDeviceAddr</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">myPeripheralInUse</span><span class="p">)</span>
+                    <span class="n">myPeripheralInUse</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_disconnectAllPeripherals"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_disconnectAllPeripherals">[docs]</a>    <span class="k">def</span> <span class="nf">ble_disconnectAllPeripherals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_disconnectAllPeripherals()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Disconnect all StretchSense devices which are connected, and remove them from both</span>
+<span class="sd">        listPeripheralIsConnected and listPeripheralInUse.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">myPeripheralInUse</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span><span class="p">:</span>
+            <span class="n">myPeripheralInUse</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralAvailable</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+</div>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">     Functions : Discover/Generate/Update Services &amp; Characteristics, and wait for notifications</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StretchSenseAPI.ble_generateOneChannel"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_generateOneChannel">[docs]</a>    <span class="k">def</span> <span class="nf">ble_generateOneChannel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peripheral</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_generateOneChannel()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        When a StretchSense gen2 device is connected we create a newSensor receiving the</span>
+<span class="sd">        specifications needed.</span>
+
+<span class="sd">        :param peripheral: Peripheral :</span>
+<span class="sd">            Using the BLE Peripheral format we can convert it into a StretchSensePeripheral</span>
+<span class="sd">            format easier to use.</span>
+
+<span class="sd">        :param periphUUID: UUID :</span>
+<span class="sd">            UUID of the StretchSense circuit</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># We create a newSensor with the address</span>
+        <span class="n">newSensor</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">addr</span>
+        <span class="n">newSensor</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">uuid</span>
+        <span class="n">newSensor</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">gen</span>
+        <span class="n">newSensor</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_generateTenChannel"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_generateTenChannel">[docs]</a>    <span class="k">def</span> <span class="nf">ble_generateTenChannel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peripheral</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_generateTenChannel()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        When a StretchSense gen3 device is connected we create ten newSensor receiving the</span>
+<span class="sd">        specifications needed.</span>
+
+<span class="sd">        :param peripheral: Peripheral :</span>
+<span class="sd">            Using the BLE Peripheral format we can convert it into a StretchSensePeripheral</span>
+<span class="sd">            format easier to use.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># We create ten newSensor with the address</span>
+        <span class="n">newSensor1</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor1</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">addr</span>
+        <span class="n">newSensor1</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">uuid</span>
+        <span class="n">newSensor1</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor1</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">gen</span>
+        <span class="n">newSensor1</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">newSensor2</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor2</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">addr</span>
+        <span class="n">newSensor2</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">uuid</span>
+        <span class="n">newSensor2</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor2</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">gen</span>
+        <span class="n">newSensor2</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="n">newSensor3</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor3</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">addr</span>
+        <span class="n">newSensor3</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">uuid</span>
+        <span class="n">newSensor3</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor3</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">gen</span>
+        <span class="n">newSensor3</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">2</span>
+
+        <span class="n">newSensor4</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor4</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">addr</span>
+        <span class="n">newSensor4</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">uuid</span>
+        <span class="n">newSensor4</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor4</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">gen</span>
+        <span class="n">newSensor4</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">3</span>
+
+        <span class="n">newSensor5</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor5</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">addr</span>
+        <span class="n">newSensor5</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">uuid</span>
+        <span class="n">newSensor5</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor5</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">gen</span>
+        <span class="n">newSensor5</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">4</span>
+
+        <span class="n">newSensor6</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor6</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">addr</span>
+        <span class="n">newSensor6</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">uuid</span>
+        <span class="n">newSensor6</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor6</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">gen</span>
+        <span class="n">newSensor6</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">5</span>
+
+        <span class="n">newSensor7</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor7</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">addr</span>
+        <span class="n">newSensor7</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">uuid</span>
+        <span class="n">newSensor7</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor7</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">gen</span>
+        <span class="n">newSensor7</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">6</span>
+
+        <span class="n">newSensor8</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor8</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">addr</span>
+        <span class="n">newSensor8</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">uuid</span>
+        <span class="n">newSensor8</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor8</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">gen</span>
+        <span class="n">newSensor8</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">7</span>
+
+        <span class="n">newSensor9</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor9</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">addr</span>
+        <span class="n">newSensor9</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">uuid</span>
+        <span class="n">newSensor9</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor9</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">gen</span>
+        <span class="n">newSensor9</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">8</span>
+
+        <span class="n">newSensor10</span> <span class="o">=</span> <span class="n">StretchSensePeripheral</span><span class="p">()</span>
+        <span class="n">newSensor10</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">addr</span>
+        <span class="n">newSensor10</span><span class="o">.</span><span class="n">uuid</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">uuid</span>
+        <span class="n">newSensor10</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">newSensor10</span><span class="o">.</span><span class="n">gen</span> <span class="o">=</span> <span class="n">peripheral</span><span class="o">.</span><span class="n">gen</span>
+        <span class="n">newSensor10</span><span class="o">.</span><span class="n">channelNumber</span> <span class="o">=</span> <span class="mi">9</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor2</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor4</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor8</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor9</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">newSensor10</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_discoverServices"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_discoverServices">[docs]</a>    <span class="k">def</span> <span class="nf">ble_discoverServices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_discoverServices()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Display on the terminal all the services for each StretchSense devices connected.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">myPeripheral</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span><span class="p">:</span>
+
+            <span class="n">listOfServices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">myPeripheral</span><span class="o">.</span><span class="n">services</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">services</span><span class="p">:</span> <span class="n">services</span><span class="o">.</span><span class="n">hndStart</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">services</span> <span class="ow">in</span> <span class="n">listOfServices</span><span class="p">:</span>
+
+                <span class="k">print</span><span class="p">(</span><span class="n">services</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_discoverCharacteristics"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_discoverCharacteristics">[docs]</a>    <span class="k">def</span> <span class="nf">ble_discoverCharacteristics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\033</span><span class="s">[0;35;40m ble_discoverCharacteristics()</span><span class="se">\033</span><span class="s">[0m&quot;</span><span class="p">)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Display on the terminal all the characteristics for each StretchSense devices connected.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">myPeripheral</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span><span class="p">:</span>
+
+            <span class="n">listOfServices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">myPeripheral</span><span class="o">.</span><span class="n">services</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">services</span><span class="p">:</span> <span class="n">services</span><span class="o">.</span><span class="n">hndStart</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">services</span> <span class="ow">in</span> <span class="n">listOfServices</span><span class="p">:</span>
+
+                <span class="n">characteristics</span> <span class="o">=</span> <span class="n">services</span><span class="o">.</span><span class="n">getCharacteristics</span><span class="p">()</span>
+
+                <span class="k">for</span> <span class="n">chars</span> <span class="ow">in</span> <span class="n">characteristics</span><span class="p">:</span>
+
+                    <span class="k">print</span><span class="p">(</span><span class="n">chars</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_updateOneChannelWithNotifications"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_updateOneChannelWithNotifications">[docs]</a>    <span class="k">def</span> <span class="nf">ble_updateOneChannelWithNotifications</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_updateOneChannelWithNotifications()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Update data from one or more StretchSense gen2 devices connected using BLE notifications</span>
+<span class="sd">        and stores its value.</span>
+
+<span class="sd">        :param data: UTF-8 characters :</span>
+<span class="sd">            data transmitted by the device once a notification is detected.</span>
+
+<span class="sd">        :param addr: string :</span>
+<span class="sd">            Address of the gen2 we want to update.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">numberOfPeripheralConnected</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">globalSensor</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">numberOfPeripheralConnected</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">myPeripheral</span> <span class="ow">in</span> <span class="n">globalSensor</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">addr</span> <span class="o">==</span> <span class="n">addr</span><span class="p">:</span>
+                    <span class="n">decimalValue</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">binascii</span><span class="o">.</span><span class="n">b2a_hex</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
+                    <span class="n">myPeripheral</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">decimalValue</span>
+                    <span class="c">#print(&quot;myPeripheral.value = &quot;, myPeripheral.value)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_updateOneChannel"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_updateOneChannel">[docs]</a>    <span class="k">def</span> <span class="nf">ble_updateOneChannel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_updateOneChannel()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Update once the value of every StretchSense gen2 devices connected without using BLE notifications.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">numberOfPeripheralConnected</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">numberOfPeripheralConnected</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">myPeripheral</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span><span class="p">:</span>
+
+                <span class="k">for</span> <span class="n">myPeripheralConnected</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">:</span>
+
+                    <span class="k">if</span> <span class="p">(</span><span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">gen</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">addr</span> <span class="o">==</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">addr</span><span class="p">):</span>
+                        <span class="n">characteristics</span> <span class="o">=</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">getCharacteristics</span><span class="p">()</span>
+
+                        <span class="k">for</span> <span class="n">chars</span> <span class="ow">in</span> <span class="n">characteristics</span><span class="p">:</span>
+
+                            <span class="k">if</span> <span class="n">chars</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataUUID2</span><span class="p">:</span>
+                                <span class="n">handler</span> <span class="o">=</span> <span class="n">chars</span><span class="o">.</span><span class="n">getHandle</span><span class="p">()</span>
+                                <span class="n">value</span> <span class="o">=</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">readCharacteristic</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+                                <span class="n">decimalValue</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">binascii</span><span class="o">.</span><span class="n">b2a_hex</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
+                                <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">decimalValue</span>
+                                <span class="k">print</span><span class="p">(</span><span class="s">&quot;myPeripheralConnected.value = &quot;</span><span class="p">,</span> <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_updateTenChannelWithNotifications"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_updateTenChannelWithNotifications">[docs]</a>    <span class="k">def</span> <span class="nf">ble_updateTenChannelWithNotifications</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">addr</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_updateTenChannelWithNotifications()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Update data from one or more StretchSense gen3 devices connected using BLE notifications</span>
+<span class="sd">        and stores its value.</span>
+
+<span class="sd">        :param data: UTF-8 characters :</span>
+<span class="sd">            data transmitted by the device once a notification is detected.</span>
+
+<span class="sd">        :param addr: string :</span>
+<span class="sd">            Address of the gen3 we want to update.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">numberOfPeripheralConnected</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">globalSensor</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">numberOfPeripheralConnected</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">myPeripheral</span> <span class="ow">in</span> <span class="n">globalSensor</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">addr</span> <span class="o">==</span> <span class="n">addr</span><span class="p">:</span>
+                    <span class="n">index</span> <span class="o">=</span> <span class="n">globalSensor</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">myPeripheral</span><span class="p">)</span>
+
+                    <span class="n">decimalValue</span> <span class="o">=</span> <span class="p">(</span><span class="n">binascii</span><span class="o">.</span><span class="n">b2a_hex</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+                    <span class="n">splitted</span> <span class="o">=</span> <span class="p">[</span><span class="n">decimalValue</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">4</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">decimalValue</span><span class="p">),</span> <span class="mi">4</span><span class="p">)]</span>
+                    <span class="n">globalSensor</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">splitted</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
+                    <span class="n">globalSensor</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">splitted</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
+                    <span class="n">globalSensor</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">splitted</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
+                    <span class="n">globalSensor</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">splitted</span><span class="p">[</span><span class="mi">3</span><span class="p">]),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
+                    <span class="n">globalSensor</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">splitted</span><span class="p">[</span><span class="mi">4</span><span class="p">]),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
+                    <span class="n">globalSensor</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">5</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">splitted</span><span class="p">[</span><span class="mi">5</span><span class="p">]),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
+                    <span class="n">globalSensor</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">splitted</span><span class="p">[</span><span class="mi">6</span><span class="p">]),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
+                    <span class="n">globalSensor</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">7</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">splitted</span><span class="p">[</span><span class="mi">7</span><span class="p">]),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
+                    <span class="n">globalSensor</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">8</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">splitted</span><span class="p">[</span><span class="mi">8</span><span class="p">]),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
+                    <span class="n">globalSensor</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">9</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">splitted</span><span class="p">[</span><span class="mi">9</span><span class="p">]),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
+                    <span class="k">break</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_updateTenChannel"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_updateTenChannel">[docs]</a>    <span class="k">def</span> <span class="nf">ble_updateTenChannel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_updateTenChannel()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Update once the value of every StretchSense gen3 devices connected without BLE using notifications.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">numberOfPeripheralConnected</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">numberOfPeripheralConnected</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">myPeripheral</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span><span class="p">:</span>
+
+                <span class="k">for</span> <span class="n">myPeripheralConnected</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">:</span>
+
+                    <span class="k">if</span> <span class="p">(</span><span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">gen</span> <span class="o">==</span> <span class="mi">3</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">addr</span> <span class="o">==</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">deviceAddr</span><span class="p">):</span>
+                        <span class="n">characteristics</span> <span class="o">=</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">getCharacteristics</span><span class="p">()</span>
+
+                        <span class="k">for</span> <span class="n">chars</span> <span class="ow">in</span> <span class="n">characteristics</span><span class="p">:</span>
+
+                            <span class="k">if</span> <span class="n">chars</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataUUID3</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataUUID10TT</span><span class="p">):</span>
+                                <span class="n">handler</span> <span class="o">=</span> <span class="n">chars</span><span class="o">.</span><span class="n">getHandle</span><span class="p">()</span>
+                                <span class="n">value</span> <span class="o">=</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">readCharacteristic</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+                                <span class="n">decimalValue</span> <span class="o">=</span> <span class="p">(</span><span class="n">binascii</span><span class="o">.</span><span class="n">b2a_hex</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+                                <span class="n">splitted</span> <span class="o">=</span> <span class="p">[</span><span class="n">decimalValue</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">4</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">decimalValue</span><span class="p">),</span> <span class="mi">4</span><span class="p">)]</span>
+
+                                <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+
+                                    <span class="k">if</span> <span class="n">channel</span> <span class="o">==</span> <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">channelNumber</span><span class="p">:</span>
+                                        <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">splitted</span><span class="p">[</span><span class="n">channel</span><span class="p">]),</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mf">10.0</span>
+                                        <span class="k">print</span><span class="p">(</span><span class="s">&quot;myPeripheralConnected.value = &quot;</span><span class="p">,</span> <span class="n">myPeripheralConnected</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                                        <span class="k">break</span>
+                                <span class="k">break</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_updateAllPeripherals"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_updateAllPeripherals">[docs]</a>    <span class="k">def</span> <span class="nf">ble_updateAllPeripherals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_updateAllPeripherals()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Update the value of the capacitance of each StretchSense devices which are connected.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">listPeripheralUpdated</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">numberOfPeripheralInUse</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">numberOfPeripheralInUse</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">myPeripheral</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span><span class="p">:</span>
+
+                <span class="k">if</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">deviceAddr</span> <span class="o">!=</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+                    <span class="n">skipThisPeripheral</span> <span class="o">=</span> <span class="bp">False</span>
+
+                    <span class="k">for</span> <span class="n">myPeripheralUpdated</span> <span class="ow">in</span> <span class="n">listPeripheralUpdated</span><span class="p">:</span>
+
+                        <span class="k">if</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">addr</span> <span class="o">==</span> <span class="n">myPeripheralUpdated</span><span class="o">.</span><span class="n">deviceAddr</span><span class="p">:</span>
+                            <span class="n">skipThisPeripheral</span> <span class="o">=</span> <span class="bp">True</span>
+
+                    <span class="k">if</span> <span class="n">skipThisPeripheral</span> <span class="ow">is</span> <span class="bp">False</span><span class="p">:</span>
+                        <span class="n">listOfServices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">myPeripheral</span><span class="o">.</span><span class="n">services</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">services</span><span class="p">:</span> <span class="n">services</span><span class="o">.</span><span class="n">hndStart</span><span class="p">)</span>
+
+                        <span class="k">for</span> <span class="n">services</span> <span class="ow">in</span> <span class="n">listOfServices</span><span class="p">:</span>
+
+                            <span class="k">if</span> <span class="n">services</span><span class="o">.</span><span class="n">hndStart</span> <span class="o">==</span> <span class="n">services</span><span class="o">.</span><span class="n">hndEnd</span><span class="p">:</span>
+                                <span class="k">continue</span>
+
+                            <span class="k">if</span> <span class="n">services</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID2</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">ble_updateOneChannel</span><span class="p">()</span>
+                                <span class="n">listPeripheralUpdated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">myPeripheral</span><span class="p">)</span>
+                                <span class="k">continue</span>
+
+                            <span class="k">if</span> <span class="n">services</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">serviceUUID3</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">ble_updateTenChannel</span><span class="p">()</span>
+                                <span class="n">listPeripheralUpdated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">myPeripheral</span><span class="p">)</span>
+                                <span class="k">continue</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_waitNotifications"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_waitNotifications">[docs]</a>    <span class="k">def</span> <span class="nf">ble_waitNotifications</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_waitNotifications()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        When called, run into all connected devices waiting for notification from each of them</span>
+<span class="sd">        and store the new data in their value slot.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">numberOfPeripheralInUse</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">numberOfPeripheralInUse</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="k">global</span> <span class="n">globalSensor</span>
+            <span class="n">globalSensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span>
+
+            <span class="k">for</span> <span class="n">myPeripheral</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">waitForNotifications</span><span class="p">(</span><span class="mf">0.01</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span> <span class="o">=</span> <span class="n">globalSensor</span>
+</div>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Functions : Lists of Peripherals</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StretchSenseAPI.ble_getListPeripheralAvailable"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_getListPeripheralAvailable">[docs]</a>    <span class="k">def</span> <span class="nf">ble_getListPeripheralAvailable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_getListPeripheralAvailable()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Returns the list of all devices available in the area.</span>
+
+<span class="sd">        :returns: [Peripheral] : List of all the devices available.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralAvailable</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_getListAddrPeripheralAvailable"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_getListAddrPeripheralAvailable">[docs]</a>    <span class="k">def</span> <span class="nf">ble_getListAddrPeripheralAvailable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_getListAddrPeripheralAvailable()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Returns the list of all devices address available in the area.</span>
+
+<span class="sd">        :returns: [addr] : List of all devices available addresses.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">listAddr</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">numberOfPeripheralAvailable</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralAvailable</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralAvailable</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">addr</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mi">0</span>
+
+        <span class="k">elif</span> <span class="n">numberOfPeripheralAvailable</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="n">numberOfPeripheralAvailable</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]:</span>
+                <span class="n">listAddr</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralAvailable</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">addr</span><span class="p">)</span>
+                <span class="k">print</span><span class="p">(</span><span class="n">listAddr</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">listAddr</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_getListPeripheralIsConnected"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_getListPeripheralIsConnected">[docs]</a>    <span class="k">def</span> <span class="nf">ble_getListPeripheralIsConnected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_getListPeripheralIsConnected()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Returns the list of all devices connected.</span>
+
+<span class="sd">        :returns: [StretchSensePeripheral] : List of all devices connected.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_getListPeripheralOnceConnected"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_getListPeripheralOnceConnected">[docs]</a>    <span class="k">def</span> <span class="nf">ble_getListPeripheralOnceConnected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_getListPeripheralOnceConnected()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Returns the list of all devices once connected.</span>
+
+<span class="sd">        :returns: [StretchSensePeripheral] : List of all devices once connected.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsOnceConnected</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_getListPeripheralInUse"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_getListPeripheralInUse">[docs]</a>    <span class="k">def</span> <span class="nf">ble_getListPeripheralInUse</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_getListPeripheralInUse()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Returns the list of all devices currently in use.</span>
+
+<span class="sd">        :returns: [Peripheral] : List of all devices we are using.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralInUse</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_listToCsv"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_listToCsv">[docs]</a>    <span class="k">def</span> <span class="nf">ble_listToCsv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_listToCsv()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Displays on the terminal the values of each connected devices in a csv format.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">listToCsv</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="n">numberOfPeripheralConnected</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">numberOfPeripheralConnected</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">myPeripheral</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">:</span>
+                <span class="n">listToCsv</span> <span class="o">+=</span> <span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> ,&quot;</span> <span class="o">%</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="n">listToCsv</span> <span class="o">+=</span> <span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">listToCsv</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StretchSenseAPI.ble_getValuesCsv"><a class="viewcode-back" href="../stretchSenseLibrary.html#stretchSenseLibrary.StretchSenseAPI.ble_getValuesCsv">[docs]</a>    <span class="k">def</span> <span class="nf">ble_getValuesCsv</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m ble_getValuesCsv()\033[0m&quot;)</span>
+
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Returns the values of each connected devices in a csv format.</span>
+
+<span class="sd">        :returns: string : Values of each connected devices.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">listToReturn</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="n">numberOfPeripheralConnected</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">numberOfPeripheralConnected</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="k">for</span> <span class="n">myPeripheral</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">listPeripheralIsConnected</span><span class="p">:</span>
+                <span class="n">listToReturn</span> <span class="o">+=</span> <span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> , &quot;</span> <span class="o">%</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">listToReturn</span>
+
+</div></div>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">Class StretchSenseDelegate : Class to handle the BLE notifications</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">StretchSenseDelegate</span><span class="p">(</span><span class="n">btle</span><span class="o">.</span><span class="n">DefaultDelegate</span><span class="p">):</span>
+    <span class="c">#print(&quot;\033[0;35;40m StretchSenseDelegate()\033[0m&quot;)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peripheral</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m __init__().StretchSenseDelegate()\033[0m&quot;)</span>
+
+        <span class="n">btle</span><span class="o">.</span><span class="n">DefaultDelegate</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">peripheral</span> <span class="o">=</span> <span class="n">peripheral</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">addr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">peripheral</span><span class="o">.</span><span class="n">addr</span>
+
+    <span class="k">def</span> <span class="nf">handleNotification</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cHandle</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="c">#print(&quot;\033[0;35;40m StretchSenseDelegateHandleNotification()\033[0m&quot;)</span>
+
+        <span class="k">for</span> <span class="n">myPeripheral</span> <span class="ow">in</span> <span class="n">globalSensor</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">addr</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">addr</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="n">StretchSenseAPI</span><span class="o">.</span><span class="n">serviceUUID2</span><span class="p">:</span>
+                    <span class="n">StretchSenseAPI</span><span class="o">.</span><span class="n">ble_updateOneChannelWithNotifications</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">myPeripheral</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">addr</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="n">StretchSenseAPI</span><span class="o">.</span><span class="n">serviceUUID3</span><span class="p">:</span>
+                    <span class="n">StretchSenseAPI</span><span class="o">.</span><span class="n">ble_updateTenChannelWithNotifications</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">addr</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">myPeripheral</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="n">StretchSenseAPI</span><span class="o">.</span><span class="n">serviceUUID10TT</span><span class="p">:</span>
+                    <span class="n">StretchSenseAPI</span><span class="o">.</span><span class="n">ble_updateTenChannelWithNotifications</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">addr</span><span class="p">)</span>
+                <span class="k">break</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">Global lists of values</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">globalSensor</span> <span class="o">=</span> <span class="p">[</span><span class="n">StretchSensePeripheral</span><span class="p">()]</span>
+
+
+<span class="sd">&quot;&quot;&quot;    Main initialisation</span>
+
+<span class="sd">Main initial declaration to compile examples and files that you are using.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="s">&quot;Usage:</span><span class="se">\n</span><span class="s">  </span><span class="si">%s</span><span class="s"> &lt;mac-address&gt; [random]&quot;</span> <span class="o">%</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">btle</span><span class="o">.</span><span class="n">helperExe</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="s">&quot;Cannot find required executable &#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="n">btle</span><span class="o">.</span><span class="n">helperExe</span><span class="p">)</span>
+
+    <span class="n">devAddr</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">addrType</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">addrType</span> <span class="o">=</span> <span class="n">btle</span><span class="o">.</span><span class="n">ADDR_TYPE_PUBLIC</span>
+    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Connecting to: {}, address type: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">devAddr</span><span class="p">,</span> <span class="n">addrType</span><span class="p">))</span>
+    <span class="n">conn</span> <span class="o">=</span> <span class="n">btle</span><span class="o">.</span><span class="n">Peripheral</span><span class="p">(</span><span class="n">devAddr</span><span class="p">,</span> <span class="n">addrType</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">svc</span> <span class="ow">in</span> <span class="n">conn</span><span class="o">.</span><span class="n">services</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">svc</span><span class="p">),</span> <span class="s">&quot;:&quot;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">svc</span><span class="o">.</span><span class="n">getCharacteristics</span><span class="p">():</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">&quot;    {}, hnd={}, supports {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ch</span><span class="p">,</span> <span class="nb">hex</span><span class="p">(</span><span class="n">ch</span><span class="o">.</span><span class="n">handle</span><span class="p">),</span> <span class="n">ch</span><span class="o">.</span><span class="n">propertiesToString</span><span class="p">()))</span>
+                <span class="n">chName</span> <span class="o">=</span> <span class="n">btle</span><span class="o">.</span><span class="n">AssignedNumbers</span><span class="o">.</span><span class="n">getCommonName</span><span class="p">(</span><span class="n">ch</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">ch</span><span class="o">.</span><span class="n">supportsRead</span><span class="p">()):</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">print</span><span class="p">(</span><span class="s">&quot;    -&gt;&quot;</span><span class="p">,</span> <span class="nb">repr</span><span class="p">(</span><span class="n">ch</span><span class="o">.</span><span class="n">read</span><span class="p">()))</span>
+                    <span class="k">except</span> <span class="n">btle</span><span class="o">.</span><span class="n">BTLEException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="k">print</span><span class="p">(</span><span class="s">&quot;    -&gt;&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">conn</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../index.html">StretchSense 1.0 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2017, Louis Germain.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

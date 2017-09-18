@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=StretchSense
+Comment=Software to use StretchSense LTD Devices with Raspberry Pi
+Exec=sudo /usr/share/applications/StretchSense/StretchSenseMain.py
+Icon=/usr/share/pixmaps/StretchSense_Logo_Blue_resized_64x64.png
+Path=/usr/share/applications/StretchSense/
+Terminal=false
+MultipleArgs=false
+Type=Application
+Encoding=UTF-8
+Categories=Accessories;
+StartupNotify=true
+X-KeepTerminal=true
