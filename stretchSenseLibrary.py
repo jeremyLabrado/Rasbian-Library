@@ -440,7 +440,7 @@ class StretchSenseAPI():
         self.myDevice = spidev.SpiDev()
         self.myDevice.close()
         self.myDevice.open(0, SPI0)
-        self.myDevice.max_speed_hz = 1000
+        self.myDevice.max_speed_hz = 2000000
         self.myDevice.mode = 1
         self.myDevice.lsbfirst = False
 
@@ -861,7 +861,7 @@ class StretchSenseAPI():
                             continue
 
     def ble_connectAllPeripheral(self):
-        print("\033[0;35;40m ble_connectAllPeripheral()\033[0m")
+        #print("\033[0;35;40m ble_connectAllPeripheral()\033[0m")
 
         """
 
@@ -1109,7 +1109,7 @@ class StretchSenseAPI():
                 print(services)
 
     def ble_discoverCharacteristics(self):
-        print("\033[0;35;40m ble_discoverCharacteristics()\033[0m")
+        #print("\033[0;35;40m ble_discoverCharacteristics()\033[0m")
 
         """
         Display on the terminal all the characteristics for each StretchSense devices connected.
@@ -1314,7 +1314,7 @@ class StretchSenseAPI():
             globalSensor = self.listPeripheralIsConnected
 
             for myPeripheral in self.listPeripheralInUse:
-                if myPeripheral.waitForNotifications(0.01):
+                if myPeripheral.waitForNotifications(0.001):
                     continue
                 self.listPeripheralIsConnected = globalSensor
 

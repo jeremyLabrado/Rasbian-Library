@@ -42,7 +42,7 @@ class SpiThread(QtCore.QThread):
         super(SpiThread, self).__init__()
 
         self.timer = QtCore.QTimer(self)
-        self.timer.setInterval(1)
+        self.timer.setInterval(10)
         self.timer.timeout.connect(self.run)
 
     def start(self):
@@ -63,7 +63,7 @@ class BleThread(QtCore.QThread):
         super(BleThread, self).__init__()
 
         self.timer = QtCore.QTimer(self)
-        self.timer.setInterval(1)
+        self.timer.setInterval(10)
         self.timer.timeout.connect(self.run)
 
     def start(self):
@@ -200,7 +200,7 @@ class QCustomQWidget(QtGui.QWidget):
         self.setTextUp(str(addr))
         self.setTextMiddle(str(index + 1))
         self.setTextDowm(str(value))
-        if (value >= 50 and value <= 600):
+        if (value >= 10 and value <= 600):
             self.iconQLabel.setStyleSheet('''background-color: rgb(0, 255, 0);
                                              border-color: transparent;''')
         else:
@@ -235,8 +235,6 @@ class StretchSenseApp(QtGui.QMainWindow, Ui_MainWindow):
         self.t0 = time.time()
         self.counter = 0
         self.myAddrToCheck = ""
-        self.backgroundWhite = '''rgb(255, 255, 255)'''
-        self.backgroundGrey = '''rgb(204, 204, 204)'''
 
         self.SpiThread = SpiThread()
         self.BleThread = BleThread()
@@ -314,7 +312,7 @@ class StretchSenseApp(QtGui.QMainWindow, Ui_MainWindow):
         #print("spiThreadDone()")
 
         """
-        Action triggerd by the BLE thread that updates our values
+        Action triggerd by the SPI thread that updates our values
 
         """
 
